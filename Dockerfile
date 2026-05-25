@@ -1,40 +1,59 @@
 FROM node:18-alpine AS builder
+
+# Directorio de trabajo
 WORKDIR /app
+
+# Copiar package files
 COPY package*.json ./
-COPY package-lock.json ./
+
+# Instalar dependencias
 RUN npm ci
+
+# Copiar proyecto
 COPY . .
+
+# Build producción
 RUN npm run build
 
+# Imagen final con nginx
 FROM nginx:alpine
 
 # Crear usuario no root
 RUN addgroup -g 1001 -S nginx-user && \
     adduser -S nginx-user -u 1001 -G nginx-user
 
-# Crear directorios necesarios con permisos
+# Crear directorios necesarios y permisos
 RUN mkdir -p /var/cache/nginx /var/run /var/log/nginx && \
-    chown -R nginx-user:nginx-user /var/cache/nginx /var/run /var/log/nginx
+    touch /var/run/nginx.pid && \
+    chown -R nginx-user:nginx-user \
+    /var/cache/nginx \
+    /var/run \
+    /var/log/nginx \
+    /usr/share/nginx/html \
+    /var/run/nginx.pid
 
-# Copiar archivos construidos
+# Eliminar configuración default
+RUN rm -f /etc/nginx/conf.d/default.conf
+
+# Copiar frontend compilado
 COPY --from=builder --chown=nginx-user:nginx-user /app/dist /usr/share/nginx/html
 
-# Configuración de nginx
+# Crear configuración nginx
 RUN echo 'server { \
-    listen 80; \
+    listen 8080; \
     server_name localhost; \
+    root /usr/share/nginx/html; \
+    index index.html index.htm; \
     location / { \
-        root /usr/share/nginx/html; \
-        index index.html index.htm; \
         try_files $uri $uri/ /index.html; \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
-# Exponer puerto
-EXPOSE 80
+# Exponer puerto no privilegiado
+EXPOSE 8080
 
-# Cambiar a usuario no root
+# Ejecutar como usuario no root
 USER nginx-user
 
-# Iniciar nginx (con PID en directorio con permisos)
-CMD ["nginx", "-g", "daemon off;", "-p", "/var/run"]
+# Iniciar nginx
+CMD ["nginx", "-g", "daemon off;"]
