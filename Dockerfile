@@ -35,8 +35,8 @@ RUN mkdir -p /var/cache/nginx /var/run /var/log/nginx && \
 # Eliminar configuración default
 RUN rm -f /etc/nginx/conf.d/default.conf
 
-# Copiar frontend compilado
-COPY --from=builder --chown=nginx-user:nginx-user /app/dist /usr/share/nginx/html
+# Copiar frontend compilado - ¡CAMBIO IMPORTANTE!
+COPY --from=builder --chown=nginx-user:nginx-user /app/build /usr/share/nginx/html
 
 # Crear configuración nginx
 RUN echo 'server { \
