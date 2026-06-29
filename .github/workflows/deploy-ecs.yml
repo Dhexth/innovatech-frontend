@@ -2,7 +2,7 @@ name: Deploy Frontend to ECS Fargate
 
 on:
   push:
-    branches: [ deploy ]
+    branches: [ deploy-ecs ]
   workflow_dispatch:
 
 env:
@@ -36,8 +36,15 @@ jobs:
           ECR_REGISTRY: 802047179233.dkr.ecr.us-east-1.amazonaws.com
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          # Construir imagen
           docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
+          
+          # Etiquetar también como latest
+          docker tag $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
+          
+          # Subir ambas imágenes
           docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
 
       - name: Update ECS Service (Fargate)
         run: |
