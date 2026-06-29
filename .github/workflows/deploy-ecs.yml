@@ -2,7 +2,7 @@ name: Deploy Frontend to ECS Fargate
 
 on:
   push:
-    branches: [ deploy ]
+    branches: [ deploy-ecs ]   # ← CAMBIADO
   workflow_dispatch:
 
 env:
