@@ -35,12 +35,12 @@ RUN mkdir -p /var/cache/nginx /var/run /var/log/nginx && \
 # Eliminar configuración default
 RUN rm -f /etc/nginx/conf.d/default.conf
 
-# Copiar frontend compilado - ¡CAMBIO IMPORTANTE!
+# Copiar frontend compilado (Vite genera dist)
 COPY --from=builder --chown=nginx-user:nginx-user /app/dist /usr/share/nginx/html
 
-# Crear configuración nginx
+# Crear configuración nginx - AHORA ESCUCHA EN EL PUERTO 80
 RUN echo 'server { \
-    listen 8080; \
+    listen 80; \
     server_name localhost; \
     root /usr/share/nginx/html; \
     index index.html index.htm; \
@@ -49,8 +49,8 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
-# Exponer puerto no privilegiado
-EXPOSE 8080
+# Exponer puerto 80 (el puerto por defecto de Nginx)
+EXPOSE 80
 
 # Ejecutar como usuario no root
 USER nginx-user
