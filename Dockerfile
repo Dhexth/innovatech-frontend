@@ -38,7 +38,7 @@ RUN rm -f /etc/nginx/conf.d/default.conf
 # Copiar frontend compilado (Vite genera dist)
 COPY --from=builder --chown=nginx-user:nginx-user /app/dist /usr/share/nginx/html
 
-# Crear configuración nginx - AHORA ESCUCHA EN EL PUERTO 80
+# Crear configuración nginx - ESCUCHA EN EL PUERTO 80
 RUN echo 'server { \
     listen 80; \
     server_name localhost; \
@@ -49,7 +49,10 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
-# Exponer puerto 80 (el puerto por defecto de Nginx)
+# 🔧 DAR PERMISO PARA USAR PUERTO 80 (SIN SER ROOT)
+RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/nginx
+
+# Exponer puerto 80
 EXPOSE 80
 
 # Ejecutar como usuario no root
