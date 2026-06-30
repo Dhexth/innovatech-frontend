@@ -49,8 +49,9 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
-# 🔧 DAR PERMISO PARA USAR PUERTO 80 (SIN SER ROOT)
-RUN setcap 'cap_net_bind_service=+ep' /usr/sbin/nginx
+# 🔧 INSTALAR setcap Y DAR PERMISOS PARA PUERTO 80
+RUN apk add --no-cache libcap && \
+    setcap 'cap_net_bind_service=+ep' /usr/sbin/nginx
 
 # Exponer puerto 80
 EXPOSE 80
