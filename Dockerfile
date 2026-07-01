@@ -1,10 +1,10 @@
 FROM node:18-alpine AS builder
 
 # Recibir el argumento de la URL de la API
-ARG REACT_APP_API_URL
+ARG VITE_API_URL=$VITE_API_URL
 
 # Establecer la variable de entorno para el build
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
 # Directorio de trabajo
 WORKDIR /app

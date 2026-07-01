@@ -11,7 +11,7 @@ env:
   ECS_CLUSTER: innovatech-cluster-ep3
   ECS_SERVICE: innovatech-frontend-service-ep3
   ECS_TASK_DEFINITION: innovatech-frontend-task-ep3
-  REACT_APP_API_URL: http://innovatech-alb-ep3-1385272106.us-east-1.elb.amazonaws.com:8080
+  VITE_API_URL: http://innovatech-alb-ep3-1385272106.us-east-1.elb.amazonaws.com:8081
 
 jobs:
   deploy:
