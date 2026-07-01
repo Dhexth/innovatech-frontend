@@ -1,146 +1,53 @@
-# Innovatech Frontend — ISY1101 EP2
+# Innovatech Chile - Frontend (React + Vite)
 
-## Descripción
+Este repositorio contiene la interfaz de usuario para el ecosistema de **Innovatech Chile**, una aplicación de tipo Single Page Application (SPA) desarrollada con React y Vite, diseñada para interactuar de manera eficiente con microservicios en la nube.
 
-Frontend de Innovatech Chile desarrollado en React, contenedorizado con Docker (multi-stage build) y desplegado automáticamente en AWS EC2 mediante un pipeline CI/CD con GitHub Actions.
-
-| Componente | Detalle |
-|---|---|
-| Framework | React + Vite |
-| Servidor | nginx:alpine |
-| Puerto | 80 (host) → 8080 (contenedor) |
-| IP Pública | 52.205.229.175 |
+## 📋 Características del Proyecto
+* **Tecnología Principal:** React (v18+) empaquetado de manera ultra-rápida con Vite.
+* **Servidor de Producción:** Servido a través de una imagen ligera de **Nginx** optimizada.
+* **Arquitectura Cloud:** Desplegado de forma serverless sobre **Amazon ECS con AWS Fargate** detrás de un Application Load Balancer (ALB).
 
 ---
 
-## Estructura del Repositorio
+## 🛠️ Requisitos Previos
 
-```
-innovatech-frontend/
-├── Dockerfile              # Multi-stage build (Node builder + nginx)
-├── docker-compose.yml      # Stack del frontend
-├── .github/
-│   └── workflows/
-│       └── deploy.yml      # Pipeline CI/CD
-├── src/
-│   ├── components/
-│   │   ├── TableDespacho.jsx
-│   │   ├── TableCompras.jsx
-│   │   ├── FormDespacho.jsx
-│   │   └── FormCierreDespacho.jsx
-│   └── ...
-├── public/
-└── package.json
-```
+Para levantar el entorno de desarrollo local o realizar modificaciones, necesitas:
+* **Node.js 18+** junto con su gestor de paquetes **npm**.
+* **Docker** (Opcional, solo si deseas probar el contenedor de producción localmente).
 
 ---
 
-## Dockerfile — Multi-Stage Build
+## 🚀 Configuración y Uso Local
 
-El Dockerfile utiliza 2 etapas:
+### 1. Variables de Entorno (`.env`)
+El frontend requiere conocer el punto de enlace de los microservicios del Backend. Crea un archivo llamado `.env` en la raíz de la carpeta del frontend y define la URL del balanceador de carga o de tu API local:
 
-1. **Builder** (`node:18-alpine`) — Instala dependencias y compila la app con `npm run build`
-2. **Producción** (`nginx:alpine`) — Sirve los archivos estáticos compilados
+```env
+VITE_API_URL=[http://innovatech-alb-ep3-1385272106.us-east-1.elb.amazonaws.com:8081](http://innovatech-alb-ep3-1385272106.us-east-1.elb.amazonaws.com:8081)
 
-Buenas prácticas aplicadas:
-- Usuario no root (`nginx-user`, UID 1001)
-- Puerto no privilegiado: 8080
-- Imagen final sin dependencias de desarrollo
-- Configuración nginx personalizada para SPA (React Router)
+💡 Nota: Para desarrollo local estricto puedes cambiar este valor temporalmente por http://localhost:8081. Sin embargo, para el despliegue final en la infraestructura de AWS, debe apuntar obligatoriamente a la URL del Balanceador de Carga (ALB).
 
----
+2. Comandos del Ciclo de Desarrollo
+Ejecuta la secuencia de comandos estándar en tu terminal para iniciar el proyecto:
+# 1. Instalar todas las dependencias declaradas en el package.json
+npm install
 
-## docker-compose.yml
+# 2. Levantar el servidor local de desarrollo con soporte de Hot Reload
+npm run dev
 
-```yaml
-services:
-  frontend:
-    image: <ECR_REGISTRY>:<IMAGE_TAG>
-    container_name: innovatech-frontend
-    restart: unless-stopped
-    ports:
-      - "80:8080"
-```
+# 3. Compilar y optimizar los recursos estáticos listos para producción
+npm run build
 
----
+🐳 Dockerización (Entorno de Producción)
+La aplicación utiliza una estrategia de Multi-stage Build (construcción en múltiples etapas) para garantizar que la imagen final distribuida sea extremadamente ligera y segura.
+# Construir la imagen Docker pasando la URL del balanceador como argumento de compilación
+docker build --build-arg VITE_API_URL=http://<ALB-URL>:8081 -t innovatech-frontend:latest .
 
-## Pipeline CI/CD — GitHub Actions
+# Ejecutar el contenedor localmente en el puerto de escucha configurado
+docker run -d -p 8080:8080 innovatech-frontend:latest
+🛠️ Solución de Problemas Frecuentes
+Error de conexión Cliente-API (Localhost/IPs fijas): Se eliminaron todas las referencias a direcciones IP privadas fijas. La aplicación inyecta la URL del balanceador dinámicamente mediante la variable VITE_API_URL. Asegúrate de reconstruir el contenedor si cambias este parámetro.
 
-El pipeline se activa con un `push` a la rama `deploy` y ejecuta:
+Fallo de permisos al iniciar Nginx (Puerto 80/8080): Con el fin de no ejecutar el servidor web con privilegios de superusuario (root) dentro del clúster ECS, se integró el uso del comando setcap en el archivo Dockerfile para dar permisos específicos de red al binario de Nginx.
 
-1. **Checkout** del código
-2. **Configure AWS credentials** (usando GitHub Secrets)
-3. **Login a Amazon ECR**
-4. **Build y Push** de la imagen Docker
-5. **Deploy** en la instancia EC2 frontend vía SSH
-
-### GitHub Secrets requeridos
-
-| Secret | Descripción |
-|---|---|
-| AWS_ACCESS_KEY_ID | Credencial AWS Academy |
-| AWS_SECRET_ACCESS_KEY | Credencial AWS Academy |
-| AWS_SESSION_TOKEN | Token de sesión AWS Academy |
-| AWS_REGION | Región (us-east-1) |
-| ECR_REGISTRY | URL del repositorio ECR |
-| EC2_HOST | IP elástica de la EC2 frontend |
-| EC2_USER | Usuario SSH (ubuntu) |
-| EC2_SSH_KEY | Clave privada PEM |
-
----
-
-## Despliegue Manual en EC2
-
-```bash
-# Conectarse a la EC2 frontend
-sudo su - ubuntu
-
-# Login a ECR
-aws ecr get-login-password --region us-east-1 \
-  | docker login --username AWS --password-stdin <ECR_REGISTRY>
-
-# Detener contenedor anterior
-docker stop innovatech-frontend || true
-docker rm innovatech-frontend || true
-
-# Levantar nuevo contenedor
-docker run -d \
-  --name innovatech-frontend \
-  --restart unless-stopped \
-  -p 80:8080 \
-  <ECR_REGISTRY>:<IMAGE_TAG>
-```
-
----
-
-## Configuración Backend
-
-El frontend se comunica con el backend en la subred privada de AWS:
-
-| Microservicio | URL |
-|---|---|
-| Despachos | http://10.0.2.123:8080/api/v1/despachos |
-| Ventas | http://10.0.2.123:8081/api/v1/ventas |
-
-La comunicación respeta las políticas de los Security Groups: el backend solo acepta tráfico proveniente del Security Group del frontend.
-
----
-
-## Acceso
-
-El frontend es el **único componente accesible desde Internet**:
-
-```
-http://52.205.229.175 (La ip publica cambia cada vez que se ingresa al laboratorio)
-```
-
----
-
-## Integrantes
-
-- Ariel Ortiz
-- Cristofer Lobos
-
-**Asignatura:** ISY1101-004V — Introducción a Herramientas DevOps  
-**Profesor:** Álvaro Mellado  
-**Evaluación:** Parcial N°2 — 2025
+Desarrollado en un entorno DevOps por Ariel Ortiz y Cristofer Lobos (2026).
