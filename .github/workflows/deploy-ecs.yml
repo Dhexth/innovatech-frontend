@@ -36,11 +36,11 @@ jobs:
         env:
           ECR_REGISTRY: 802047179233.dkr.ecr.us-east-1.amazonaws.com
           IMAGE_TAG: ${{ github.sha }}
-          REACT_APP_API_URL: ${{ env.REACT_APP_API_URL }}
+          VITE_API_URL: ${{ env.VITE_API_URL }}   # ← CAMBIADO
         run: |
           # Construir imagen SIN CACHÉ pasando la variable
           docker build --no-cache \
-            --build-arg REACT_APP_API_URL=$REACT_APP_API_URL \
+            --build-arg VITE_API_URL=$VITE_API_URL \
             -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
           
           # Etiquetar también como latest
