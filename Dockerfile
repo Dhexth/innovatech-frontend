@@ -1,5 +1,11 @@
 FROM node:18-alpine AS builder
 
+# Recibir el argumento de la URL de la API
+ARG VITE_API_URL
+
+# Establecer la variable de entorno para el build
+ENV VITE_API_URL=$VITE_API_URL
+
 # Directorio de trabajo
 WORKDIR /app
 
@@ -12,7 +18,7 @@ RUN npm ci
 # Copiar proyecto
 COPY . .
 
-# Build producción
+# Build producción (Vite genera dist)
 RUN npm run build
 
 # Imagen final con nginx
@@ -22,7 +28,7 @@ FROM nginx:alpine
 RUN addgroup -g 1001 -S nginx-user && \
     adduser -S nginx-user -u 1001 -G nginx-user
 
-# Crear directorios necesarios y permisos
+# Crear directorios necesarios y otorgar permisos al usuario no root
 RUN mkdir -p /var/cache/nginx /var/run /var/log/nginx && \
     touch /var/run/nginx.pid && \
     chown -R nginx-user:nginx-user \
@@ -32,13 +38,13 @@ RUN mkdir -p /var/cache/nginx /var/run /var/log/nginx && \
     /usr/share/nginx/html \
     /var/run/nginx.pid
 
-# Eliminar configuración default
+# Eliminar configuración por defecto de nginx
 RUN rm -f /etc/nginx/conf.d/default.conf
 
-# Copiar frontend compilado
+# Copiar frontend compilado desde la etapa anterior con los permisos adecuados
 COPY --from=builder --chown=nginx-user:nginx-user /app/dist /usr/share/nginx/html
 
-# Crear configuración nginx
+# Crear configuración de Nginx para escuchar en el puerto seguro 8080
 RUN echo 'server { \
     listen 8080; \
     server_name localhost; \
@@ -49,11 +55,11 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
-# Exponer puerto no privilegiado
+# Exponer el puerto 8080
 EXPOSE 8080
 
-# Ejecutar como usuario no root
+# Cambiar al usuario no root antes de ejecutar la aplicación
 USER nginx-user
 
-# Iniciar nginx
+# Iniciar Nginx en primer plano
 CMD ["nginx", "-g", "daemon off;"]

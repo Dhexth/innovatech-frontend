@@ -2,7 +2,7 @@ name: Deploy Frontend to ECS Fargate
 
 on:
   push:
-    branches: [ deploy ]
+    branches: [ deploy-ecs ]
   workflow_dispatch:
 
 env:
@@ -11,6 +11,7 @@ env:
   ECS_CLUSTER: innovatech-cluster-ep3
   ECS_SERVICE: innovatech-frontend-service-ep3
   ECS_TASK_DEFINITION: innovatech-frontend-task-ep3
+  VITE_API_URL: http://innovatech-alb-ep3-1385272106.us-east-1.elb.amazonaws.com:8081
 
 jobs:
   deploy:
@@ -35,9 +36,19 @@ jobs:
         env:
           ECR_REGISTRY: 802047179233.dkr.ecr.us-east-1.amazonaws.com
           IMAGE_TAG: ${{ github.sha }}
+          VITE_API_URL: ${{ env.VITE_API_URL }}   # ← CAMBIADO
         run: |
-          docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
+          # Construir imagen SIN CACHÉ pasando la variable
+          docker build --no-cache \
+            --build-arg VITE_API_URL=$VITE_API_URL \
+            -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
+          
+          # Etiquetar también como latest
+          docker tag $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
+          
+          # Subir ambas imágenes
           docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
 
       - name: Update ECS Service (Fargate)
         run: |

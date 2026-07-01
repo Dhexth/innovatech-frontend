@@ -7,19 +7,23 @@ export const TableDespachos = () => {
   const [despachos, setDespachos] = useState([]);
 
   const despacho = async () => {
-    await axios
-      .get("http://192.168.3.20/api/v1/despachos", {
-        headers:{
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
+    console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/despachos`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
-      })
-      .then((response) => {
-        console.log(response.data);
-        setDespachos(response.data);
       });
+      console.log("Respuesta despachos:", response.data);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setDespachos(data);
+    } catch (error) {
+      console.error("Error al obtener despachos:", error);
+      setDespachos([]);
+    }
   };
-  // Llamada a la función para obtener los datos cuando el componente se monta
+
   useEffect(() => {
     despacho();
   }, []);
@@ -50,35 +54,33 @@ export const TableDespachos = () => {
                 </tr>
               </thead>
               <tbody>
-                {despachos
-               
-                .map((despacho) => (
+                {despachos.map((despacho) => (
                   <tr key={despacho.idDespacho}>
                     <td className="pr-10 py-10 items-center">{despacho.idDespacho}</td>
-                    <td className="pr-10 py-10  items-center">
+                    <td className="pr-10 py-10 items-center">
                       {despacho.idCompra}
                     </td>
-                    <td className="pr-10 py-10  items-center">
+                    <td className="pr-10 py-10 items-center">
                       {despacho.direccionCompra}
                     </td>
-                    <td className="pr-10 py-10  items-center">
+                    <td className="pr-10 py-10 items-center">
                       {despacho.fechaDespacho}
                     </td>
-                    <td className="pr-10 py-10  items-center">
+                    <td className="pr-10 py-10 items-center">
                       {despacho.patenteCamion}
                     </td>
-                    <td className="pr-10 py-10  items-center">
+                    <td className="pr-10 py-10 items-center">
                       {despacho.entregado
                         ? "Despacho entregado"
                         : "Despacho pendiente"}
                     </td>
-                    <td className="pr-10 py-10  items-center">
+                    <td className="pr-10 py-10 items-center">
                       {despacho.intento}
                     </td>
                     <td>
                       <button
                         onClick={() => handleAbrirModal(despacho)}
-                        className="py-1 bg-orange-200 px-8 rounded-xl shadow-md hover:bg-orange-300/70 transition-all duration-300 "
+                        className="py-1 bg-orange-200 px-8 rounded-xl shadow-md hover:bg-orange-300/70 transition-all duration-300"
                       >
                         Cerrar despacho
                       </button>
@@ -100,8 +102,8 @@ export const TableDespachos = () => {
           <FormCierreDespacho
             despacho={despachoSeleccionado}
             onClose={() => {
-              //onclose es un prop que pasa funciones al modal con el form abierto, por ende al cerrarse, se ejecutan esas 2 funciones
-              setOpenModal(false), despacho();
+              setOpenModal(false);
+              despacho();
             }}
           />
         )}

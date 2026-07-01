@@ -24,22 +24,29 @@ export const FormDespacho = ({ venta, onClose }) => {
     console.log("Datos del formulario:", jsonData);
 
     try {
+      // ✅ Ventas en puerto 8082
+      const VITE_API_URL_VENTAS = "http://innovatech-alb-ep3-1385272106.us-east-1.elb.amazonaws.com:8082";
+      
       await axios.put(
-        `http://192.168.30/api/v1/ventas/${venta.idVenta}`,
+        `${VITE_API_URL_VENTAS}/api/v1/ventas/${venta.idVenta}`,
         jsonDataSales,
         {
-          headers:{
+          headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
-      }
+          }
         }
       );
-      await axios.post("http://192.168.320/api/v1/despachos", jsonData, {
-        headers:{
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-    }
-      });
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/despachos`,
+        jsonData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        }
+      );
       Swal.fire({
         title: "Despacho registrado 🛻!",
         text: "El despacho ha sido generado con éxito en la base de datos",
@@ -51,6 +58,7 @@ export const FormDespacho = ({ venta, onClose }) => {
     }
     onClose();
   };
+
   return (
     <>
       <form
