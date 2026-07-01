@@ -11,6 +11,7 @@ env:
   ECS_CLUSTER: innovatech-cluster-ep3
   ECS_SERVICE: innovatech-frontend-service-ep3
   ECS_TASK_DEFINITION: innovatech-frontend-task-ep3
+  REACT_APP_API_URL: http://innovatech-alb-ep3-1385272106.us-east-1.elb.amazonaws.com:8080
 
 jobs:
   deploy:
@@ -31,21 +32,16 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Debug - Verify Dockerfile content
-        run: |
-          echo "=== CONTENIDO DEL DOCKERFILE ==="
-          cat Dockerfile
-          echo "================================"
-          echo "=== LÍNEA DE COPY ==="
-          grep "COPY --from=builder" Dockerfile || echo "No se encontró la línea COPY"
-
       - name: Build, tag and push image to Amazon ECR
         env:
           ECR_REGISTRY: 802047179233.dkr.ecr.us-east-1.amazonaws.com
           IMAGE_TAG: ${{ github.sha }}
+          REACT_APP_API_URL: ${{ env.REACT_APP_API_URL }}
         run: |
-          # Construir imagen SIN CACHÉ para forzar el uso del Dockerfile correcto
-          docker build --no-cache -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
+          # Construir imagen SIN CACHÉ pasando la variable
+          docker build --no-cache \
+            --build-arg REACT_APP_API_URL=$REACT_APP_API_URL \
+            -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
           
           # Etiquetar también como latest
           docker tag $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
