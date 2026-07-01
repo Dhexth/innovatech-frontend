@@ -7,9 +7,12 @@ export const TableCompras = () => {
   const [ventas, setVentas] = useState([]);
 
   const compras = async () => {
-    console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
+    // ✅ Variable para Ventas (puerto 8082)
+    const VITE_API_URL_VENTAS = "http://innovatech-alb-ep3-1385272106.us-east-1.elb.amazonaws.com:8082";
+    
+    console.log("VITE_API_URL_VENTAS:", VITE_API_URL_VENTAS);
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/ventas`, {
+      const response = await axios.get(`${VITE_API_URL_VENTAS}/api/v1/ventas`, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
