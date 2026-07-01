@@ -16,7 +16,9 @@ export const TableDespachos = () => {
       })
       .then((response) => {
         console.log(response.data);
-        setDespachos(response.data);
+        //VALIDACIÓN: si no es arreglo, usa []
+        const data = Array.isArray(response.data) ? response.data : [];
+        setDespachos(data);
       });
   };
   // Llamada a la función para obtener los datos cuando el componente se monta

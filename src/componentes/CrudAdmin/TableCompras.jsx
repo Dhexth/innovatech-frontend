@@ -14,7 +14,9 @@ export const TableCompras = () => {
   }
     }).then((response) => {
       console.log(response.data);
-      setVentas(response.data);
+      // ✅ VALIDACIÓN: si no es arreglo, usa []
+      const data = Array.isArray(response.data) ? response.data : [];
+      setVentas(data);
     });
   };
   // Llamada a la función para obtener los datos cuando el componente se monta
